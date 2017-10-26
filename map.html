@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Google Maps Example</title>
+    <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.4.1.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" />
+  </head>
+  <body onload="getLocation()">
+    <div class="container">
+      <h1>PubNub Google Maps Example</h1>
+      <div id="map-canvas" style="width:600px;height:400px"></div>
+    </div>
+
+    <script>
+function getLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(showPosition);
+    } else {
+        x.innerHTML = "Geolocation is not supported by this browser.";
+    }
+}
+function showPosition(position) {
+  window.lat = position.coords.latitude;
+  window.lng = position.coords.longitude;
+};
+    var map;
+    var mark;
+    var lineCoords = [];
+    var initialize = function() {
+      map  = new google.maps.Map(document.getElementById('map-canvas'), {center:{lat:lat,lng:lng},zoom:12});
+      mark = new google.maps.Marker({position:{lat:lat, lng:lng}, map:map});
+      lineCoords.push(new google.maps.LatLng(window.lat, window.lng));
+    };
+    window.initialize = initialize;
+    var redraw = function(payload) {
+      lat = payload.message.lat;
+      lng = payload.message.lng;
+      map.setCenter({lat:lat, lng:lng, alt:0});
+      mark.setPosition({lat:lat, lng:lng, alt:0});
+      lineCoords.push(new google.maps.LatLng(lat, lng));
+      var lineCoordinatesPath = new google.maps.Polyline({
+        path: lineCoords,
+        geodesic: true,
+        strokeColor: '#2E10FF'
+      });
+      
+      lineCoordinatesPath.setMap(map);
+    };
+    var pnChannel = "map-channel";
+    var pubnub = new PubNub({
+      publishKey: 'pub-c-f7983290-dfaa-425c-b13b-2879d5468bbc',
+      subscribeKey: 'sub-c-9957b45a-ba1b-11e7-b0ca-ee8767eb9c7d'
+    });
+    pubnub.subscribe({channels: [pnChannel]});
+    pubnub.addListener({message:redraw});
+    setInterval(function() {
+    showPosition(getLocation());}, 10000);
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&key=AIzaSyCEWKENQRoEDcS8ZsHeW1uxiU7-TOzGQVc&callback=initialize"></script>
+  </body>
+</html>
